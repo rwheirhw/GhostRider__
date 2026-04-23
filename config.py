@@ -50,23 +50,23 @@ MAX_FPS = 30
 # ──────────────────────────────────────────────
 #  Status Panel
 # ──────────────────────────────────────────────
-PANEL_HEIGHT = 60          # Pixels reserved at the bottom for HUD info
+PANEL_HEIGHT = 80          # Pixels reserved at the bottom for HUD info
 
 # ──────────────────────────────────────────────
 #  Color Palette  (R, G, B)
 # ──────────────────────────────────────────────
-COLOR_CLEAR       = (235, 235, 230)    # Warm off-white for walkable cells
-COLOR_OBSTACLE    = ( 55,  55,  60)    # Dark charcoal for walls/buildings
-COLOR_FIRE_A      = (230,  60,  30)    # Primary fire orange-red
-COLOR_FIRE_B      = (255, 120,  20)    # Secondary fire (animated glow)
-COLOR_HIGH_RISK   = (255, 200,  50)    # Amber warning for fire-adjacent
-COLOR_START       = ( 30, 180, 100)    # Green marker for start
-COLOR_END         = ( 40, 120, 220)    # Blue marker for safe zone
-COLOR_AGENT       = (  0, 230, 180)    # Cyan-teal for the agent
-COLOR_PATH        = (100, 100, 255)    # Soft blue for planned path
-COLOR_REPLAN_FLASH= (255, 255, 100)    # Yellow flash on replan
-COLOR_GRID_LINE   = (200, 200, 195)    # Subtle grid lines
-COLOR_PANEL_BG    = ( 30,  30,  35)    # Dark HUD background
-COLOR_TEXT         = (220, 220, 220)   # Light text for HUD
-COLOR_TRAPPED_BG  = (180,  20,  20)   # Red overlay for trapped state
-COLOR_SUCCESS_BG  = ( 20, 160,  80)   # Green overlay for success state
+COLOR_CLEAR       = ( 25,  26,  30)    # Deep midnight blue for empty space
+COLOR_OBSTACLE    = ( 44,  45,  56)    # Lighter grayish-blue for walls (stands out vs clear)
+COLOR_FIRE_A      = (255,  55,  85)    # Neon pinkish-red
+COLOR_FIRE_B      = (255, 145,   0)    # Neon orange glow
+COLOR_HIGH_RISK   = ( 90,  60,  30)    # Subtle warm warning glow
+COLOR_START       = (  0, 220, 140)    # Bright teal-green jump start
+COLOR_END         = ( 50, 160, 255)    # Bright neon blue safe zone
+COLOR_AGENT       = (255, 255, 255)    # Bright white agent core
+COLOR_PATH        = (  0, 180, 255)    # Cyberpunk light blue path dots
+COLOR_REPLAN_FLASH= (255, 230,  50)    # Neon yellow flash
+COLOR_GRID_LINE   = ( 35,  36,  42)    # Very subtle, slightly above CLEAR
+COLOR_PANEL_BG    = ( 15,  16,  20)    # Jet black HUD background
+COLOR_TEXT         = (200, 210, 220)   # Crisp light gray text
+COLOR_TRAPPED_BG  = (220,  30,  50)    # Strong red overlay
+COLOR_SUCCESS_BG  = ( 30, 200, 100)    # Strong green overlay

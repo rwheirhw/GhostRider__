@@ -5,7 +5,7 @@
 **Course:** Principles of Artificial Intelligence — Unit II (Informed Search Strategies)
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
-![Pygame](https://img.shields.io/badge/Pygame-2.6+-green?logo=pygame)
+![Pygame](https://img.shields.io/badge/pygame--ce-2.5.7+-green?logo=pygame)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
 ---
@@ -74,6 +74,7 @@ The path **visibly shifts** when the agent detects fire blocking its route and t
 ### Prerequisites
 
 - Python 3.10 or higher
+- On Python 3.14, install dependencies with `pygame-ce` as listed in `requirements.txt`
 
 ### Installation
 

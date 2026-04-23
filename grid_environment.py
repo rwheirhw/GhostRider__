@@ -290,31 +290,43 @@ class GridEnvironment:
 
                 # --- Base cell colour ---
                 if state == OBSTACLE:
-                    color = COLOR_OBSTACLE
+                    # Draw obstacles slightly smaller with rounded corners
+                    pygame.draw.rect(surface, COLOR_CLEAR, rect)
+                    inner_rect = rect.inflate(-4, -4)
+                    pygame.draw.rect(surface, COLOR_OBSTACLE, inner_rect, border_radius=4)
                 elif state == FIRE:
-                    # Alternate between two fire colours for glow effect
+                    # Animate fire with circles on top of the base tile
+                    pygame.draw.rect(surface, COLOR_CLEAR, rect)
                     color = COLOR_FIRE_A if (self.frame_tick + r + c) % 2 == 0 \
                         else COLOR_FIRE_B
+                    pygame.draw.circle(surface, color, rect.center, CELL_SIZE // 2 - 2)
+                    # Outer glow via smaller dark red if needed, but pulsing colour is enough
                 elif state == HIGH_RISK:
-                    color = COLOR_HIGH_RISK
+                    pygame.draw.rect(surface, COLOR_HIGH_RISK, rect)
                 else:
-                    color = COLOR_CLEAR
+                    pygame.draw.rect(surface, COLOR_CLEAR, rect)
 
-                pygame.draw.rect(surface, color, rect)
-
-                # Subtle grid lines
-                pygame.draw.rect(surface, COLOR_GRID_LINE, rect, 1)
+                # Subtle grid lines (drawn everywhere except obstacles which have padding)
+                if state != OBSTACLE:
+                    pygame.draw.rect(surface, COLOR_GRID_LINE, rect, 1)
 
         # --- Draw the planned path overlay ---------------------------------
         if path:
             path_color = COLOR_REPLAN_FLASH if replan_flash else COLOR_PATH
+            
+            # Optionally draw lines between path points
+            points = []
             for (r, c) in path:
-                # Skip drawing path on fire/obstacle cells (stale path data)
-                if self.grid[r][c] in (FIRE, OBSTACLE):
-                    continue
-                px = c * CELL_SIZE + CELL_SIZE // 2
-                py = r * CELL_SIZE + CELL_SIZE // 2
-                radius = CELL_SIZE // 4
+                if self.grid[r][c] not in (FIRE, OBSTACLE):
+                    px = c * CELL_SIZE + CELL_SIZE // 2
+                    py = r * CELL_SIZE + CELL_SIZE // 2
+                    points.append((px, py))
+            
+            if len(points) > 1:
+                pygame.draw.lines(surface, path_color, False, points, width=3)
+                
+            for (px, py) in points:
+                radius = max(2, CELL_SIZE // 6)
                 pygame.draw.circle(surface, path_color, (px, py), radius)
 
         # --- Draw Start and End markers ------------------------------------
@@ -325,12 +337,12 @@ class GridEnvironment:
         if agent_pos:
             ax = agent_pos[1] * CELL_SIZE + CELL_SIZE // 2
             ay = agent_pos[0] * CELL_SIZE + CELL_SIZE // 2
-            # Outer glow ring
-            pygame.draw.circle(surface, (0, 180, 150), (ax, ay),
-                               CELL_SIZE // 2, 2)
-            # Inner filled circle
+            # Outer neon glow ring
+            pygame.draw.circle(surface, COLOR_START, (ax, ay),
+                               int(CELL_SIZE * 0.45), 2)
+            # Inner filled white circle
             pygame.draw.circle(surface, COLOR_AGENT, (ax, ay),
-                               CELL_SIZE // 3)
+                               int(CELL_SIZE * 0.25))
 
     # ------------------------------------------------------------------ #
     def draw_hud(self, surface: pygame.Surface, steps: int, replans: int,
@@ -345,25 +357,29 @@ class GridEnvironment:
         panel_rect = pygame.Rect(0, panel_y,
                                  self.cols * CELL_SIZE, PANEL_HEIGHT)
         pygame.draw.rect(surface, COLOR_PANEL_BG, panel_rect)
+        # Top border for the HUD
+        pygame.draw.line(surface, COLOR_OBSTACLE, (0, panel_y), (self.cols * CELL_SIZE, panel_y), 2)
 
-        font = pygame.font.SysFont("consolas", 14)
+        font = pygame.font.SysFont("segoe ui", 16, bold=True)
+        small_font = pygame.font.SysFont("segoe ui", 12)
 
-        # Status line
-        status_text = font.render(
-            f"Status: {status}", True, COLOR_TEXT)
-        surface.blit(status_text, (10, panel_y + 5))
+        # Status line: larger, colored based on state
+        status_color = COLOR_SUCCESS_BG if "EVACUATED" in status else (
+            COLOR_TRAPPED_BG if "TRAPPED" in status else COLOR_PATH)
+        
+        status_text = font.render(f"STATUS » {status}", True, status_color)
+        surface.blit(status_text, (10, panel_y + 10))
 
-        # Metrics line
-        metrics = (f"Steps: {steps}   |   Replans: {replans}   |   "
-                   f"Path Length: {path_len}")
-        metrics_text = font.render(metrics, True, COLOR_TEXT)
-        surface.blit(metrics_text, (10, panel_y + 25))
+        # Metrics line with separators
+        metrics = (f"STEPS: {steps}   |   REPLANS: {replans}   |   "
+                   f"PATH: {path_len}")
+        metrics_text = small_font.render(metrics, True, COLOR_TEXT)
+        surface.blit(metrics_text, (10, panel_y + 35))
 
         # Controls line
         controls = "SPACE=Pause  R=Restart  +/-=Speed  ESC=Quit"
-        controls_text = font.render(controls, True,
-                                    (140, 140, 140))
-        surface.blit(controls_text, (10, panel_y + 42))
+        controls_text = font.render(controls, True, (255, 255, 255))  # Bright white to ensure visibility
+        surface.blit(controls_text, (10, panel_y + 55))
 
     # ------------------------------------------------------------------ #
     def draw_overlay(self, surface: pygame.Surface, text: str,
@@ -371,13 +387,17 @@ class GridEnvironment:
         """Draw a translucent overlay with a large centred message."""
         overlay = pygame.Surface(
             (self.cols * CELL_SIZE, self.rows * CELL_SIZE), pygame.SRCALPHA)
-        overlay.fill((*bg_color, 160))  # Semi-transparent
+        overlay.fill((*bg_color, 200))  # Slightly less transparent
         surface.blit(overlay, (0, 0))
 
-        font = pygame.font.SysFont("consolas", 32, bold=True)
+        font = pygame.font.SysFont("segoe ui black", 36, bold=False)
         label = font.render(text, True, (255, 255, 255))
         lx = (self.cols * CELL_SIZE - label.get_width()) // 2
         ly = (self.rows * CELL_SIZE - label.get_height()) // 2
+
+        # Shadow text for pop effect
+        shadow_label = font.render(text, True, (10, 10, 20))
+        surface.blit(shadow_label, (lx + 2, ly + 2))
         surface.blit(label, (lx, ly))
 
     # ------------------------------------------------------------------ #
@@ -387,13 +407,16 @@ class GridEnvironment:
                      color: tuple, letter: str):
         """Draw a coloured square with a centred letter for S / E markers."""
         r, c = pos
-        rect = pygame.Rect(c * CELL_SIZE, r * CELL_SIZE,
-                           CELL_SIZE, CELL_SIZE)
-        pygame.draw.rect(surface, color, rect)
-        pygame.draw.rect(surface, COLOR_GRID_LINE, rect, 1)
+        rect = pygame.Rect(c * CELL_SIZE + 2, r * CELL_SIZE + 2,
+                           CELL_SIZE - 4, CELL_SIZE - 4)
+        # Background
+        pygame.draw.rect(surface, color, rect, border_radius=6)
+        
+        # Thicker border
+        pygame.draw.rect(surface, (255, 255, 255), rect, width=2, border_radius=6)
 
-        font = pygame.font.SysFont("consolas", CELL_SIZE - 4, bold=True)
-        label = font.render(letter, True, (255, 255, 255))
-        lx = rect.x + (CELL_SIZE - label.get_width()) // 2
-        ly = rect.y + (CELL_SIZE - label.get_height()) // 2
+        font = pygame.font.SysFont("segoe ui", int(CELL_SIZE * 0.7), bold=True)
+        label = font.render(letter, True, (20, 20, 20))
+        lx = rect.x + (rect.width - label.get_width()) // 2
+        ly = rect.y + (rect.height - label.get_height()) // 2
         surface.blit(label, (lx, ly))
